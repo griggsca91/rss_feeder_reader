@@ -6,7 +6,9 @@ import (
 	"log"
 	"net/http"
 
+	"fyne.io/fyne"
 	"fyne.io/fyne/app"
+	"fyne.io/fyne/layout"
 	"fyne.io/fyne/widget"
 )
 
@@ -30,7 +32,7 @@ type Item struct {
 }
 
 func getChannel(url string)  (*Channel, error) {
-	resp, err := http.Get("https://hnrss.org/frontpage")
+	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
 	}
@@ -50,24 +52,42 @@ func getChannel(url string)  (*Channel, error) {
 	return &rssFeed.Channel, nil
 }
 
-func main() {
-	app := app.New()
-
-	channel, err := getChannel("https://hnrss.org/frontpage")
-	if err != nil {
-		log.Fatalf("Error getting feed %v", err)
-	}
-
-
-	w := app.NewWindow("Hello")
-	rootContainer := widget.NewVBox()
-	for _, item := range channel.Items {
+func addFeedItemsToContainer(container *widget.Box, feed Channel) {
+	container.Children = nil
+	items := make([]fyne.CanvasObject, 0)
+	for _, item := range feed.Items {
 		hBox := widget.NewHBox(
 			widget.NewLabel(item.Title),
 		)
-		rootContainer.Append(hBox)
+		items = append(items, hBox)
 	}
 
+	container.Children = items
+}
+
+func main() {
+	app := app.New()
+
+	feedContainer := widget.NewVBox()
+	feedContainerScroller := widget.NewScrollContainer(feedContainer)
+
+	w := app.NewWindow("Hello")
+
+	refreshButton := widget.NewButton("Refresh", func() {
+		feed, err := getChannel("https://hnrss.org/newest")
+		log.Println("got the feed")
+		if err != nil {
+			log.Fatalf("Error getting feed %v", err)
+		}
+		log.Println("deleted the children")
+		addFeedItemsToContainer(feedContainer, *feed)
+		log.Println("added feed items to container")
+		feedContainer.Refresh()
+		feedContainerScroller.Refresh()
+		log.Println("refreshsed the screen")
+
+	})
+	rootContainer := fyne.NewContainerWithLayout(layout.NewBorderLayout(refreshButton, nil, nil, nil), refreshButton, feedContainerScroller)
 
 	w.SetContent(rootContainer)
 

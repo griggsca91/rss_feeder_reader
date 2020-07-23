@@ -17,21 +17,21 @@ type RSS struct {
 }
 
 type Channel struct {
-	Title string `xml:"title"`
+	Title         string `xml:"title"`
 	LastBuildDate string `xml:"lastBuildDate"`
-	Items []Item `xml:"item"`
+	Items         []Item `xml:"item"`
 }
 
 type Item struct {
-	Title string `xml:"title"`
+	Title       string `xml:"title"`
 	Description string `xml:"description"`
-	PubDate string `xml:"pubDate"`
-	Link string `xml:"link"`
-	Comments string `xml:"comments"`
-	Guid string `xml:"guid"`
+	PubDate     string `xml:"pubDate"`
+	Link        string `xml:"link"`
+	Comments    string `xml:"comments"`
+	Guid        string `xml:"guid"`
 }
 
-func getChannel(url string)  (*Channel, error) {
+func getChannel(url string) (*Channel, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
@@ -79,15 +79,17 @@ func main() {
 		if err != nil {
 			log.Fatalf("Error getting feed %v", err)
 		}
-		log.Println("deleted the children")
+
 		addFeedItemsToContainer(feedContainer, *feed)
-		log.Println("added feed items to container")
+
 		feedContainer.Refresh()
 		feedContainerScroller.Refresh()
-		log.Println("refreshsed the screen")
-
 	})
-	rootContainer := fyne.NewContainerWithLayout(layout.NewBorderLayout(refreshButton, nil, nil, nil), refreshButton, feedContainerScroller)
+	rootContainer := fyne.NewContainerWithLayout(
+		layout.NewBorderLayout(refreshButton, nil, nil, nil),
+		refreshButton,
+		feedContainerScroller,
+	)
 
 	w.SetContent(rootContainer)
 

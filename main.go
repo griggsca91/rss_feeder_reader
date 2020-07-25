@@ -6,32 +6,17 @@ import (
 	"log"
 	"net/http"
 
+	"rss_feeder_reader/component"
+	"rss_feeder_reader/customtheme"
+	"rss_feeder_reader/model"
+
 	"fyne.io/fyne"
 	"fyne.io/fyne/app"
 	"fyne.io/fyne/layout"
 	"fyne.io/fyne/widget"
 )
 
-type RSS struct {
-	Channel Channel `xml:"channel"`
-}
-
-type Channel struct {
-	Title         string `xml:"title"`
-	LastBuildDate string `xml:"lastBuildDate"`
-	Items         []Item `xml:"item"`
-}
-
-type Item struct {
-	Title       string `xml:"title"`
-	Description string `xml:"description"`
-	PubDate     string `xml:"pubDate"`
-	Link        string `xml:"link"`
-	Comments    string `xml:"comments"`
-	Guid        string `xml:"guid"`
-}
-
-func getChannel(url string) (*Channel, error) {
+func getChannel(url string) (*model.Channel, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
@@ -43,7 +28,7 @@ func getChannel(url string) (*Channel, error) {
 		return nil, err
 	}
 
-	var rssFeed RSS
+	var rssFeed model.RSS
 	err = xml.Unmarshal(body, &rssFeed)
 	if err != nil {
 		return nil, err
@@ -52,14 +37,12 @@ func getChannel(url string) (*Channel, error) {
 	return &rssFeed.Channel, nil
 }
 
-func addFeedItemsToContainer(container *widget.Box, feed Channel) {
+func addFeedItemsToContainer(container *widget.Box, feed model.Channel) {
 	container.Children = nil
 	items := make([]fyne.CanvasObject, 0)
 	for _, item := range feed.Items {
-		hBox := widget.NewHBox(
-			widget.NewLabel(item.Title),
-		)
-		items = append(items, hBox)
+		feedItemRow := component.NewFeedItemRow(item)
+		items = append(items, feedItemRow)
 	}
 
 	container.Children = items
@@ -70,6 +53,8 @@ func main() {
 
 	feedContainer := widget.NewVBox()
 	feedContainerScroller := widget.NewScrollContainer(feedContainer)
+	t := customtheme.NewCustomTheme()
+	app.Settings().SetTheme(t)
 
 	w := app.NewWindow("Hello")
 

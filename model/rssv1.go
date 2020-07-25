@@ -1,7 +1,10 @@
 package model
 
-type RSS struct {
-	Channel Channel `xml:"channel"`
+import "encoding/xml"
+
+type RSSv1 struct {
+	xml.Name `xml:"rss"`
+	Channel  Channel `xml:"channel"`
 }
 
 type Channel struct {

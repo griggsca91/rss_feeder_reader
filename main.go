@@ -41,51 +41,54 @@ func getFeeds(url string) ([]string, error) {
 
 
 
-func getFeed(url string) (*model.Channel, error) {
+func getFeed(url string) (model.Feeder, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	req.Header["user-agent"] = []string{"not a bot"}
 	if err != nil {
 		return nil, err
 	}
 	resp, err := http.DefaultClient.Do(req)
-	contentType := resp.Header.Get("content-type")
-	fmt.Println("content-type", contentType)
-	if strings.Contains(contentType, "application/atom+xml") {
-		fmt.Println("is Atom")
-	} else if strings.Contains(contentType, "application/rss+xml") {
-		fmt.Println("is rss")
-	}
-
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
-	var rssFeed model.RSSv1
-	var atomFeed model.Atom
-	err = xml.Unmarshal(body, &atomFeed)
-	if err != nil {
-		return nil, err
-	}
-	fmt.Println(atomFeed)
+  contentType := resp.Header.Get("content-type")
+  fmt.Println("content-type", contentType)
+  if strings.Contains(contentType, "application/atom+xml") {
+    fmt.Println("is Atom")
+    var atomFeed model.Atom
+    if err = xml.Unmarshal(body, &atomFeed); err != nil {
+      return nil, err
+    }
+    return &atomFeed, nil
 
-	return &rssFeed.Channel, nil
+  } else if strings.Contains(contentType, "application/rss+xml") {
+    fmt.Println("is rss")
+    var rssFeed model.RSSv1
+    if err = xml.Unmarshal(body, &rssFeed); err != nil {
+      return nil, err
+    }
+    fmt.Println(rssFeed)
+
+    return &rssFeed, nil
+  }
+
+
+  return nil, fmt.Errorf("Invalid feed type: %s", contentType)
 }
 
-func addFeedItemsToContainer(container *widget.Box, feed model.Channel) {
-	container.Children = nil
-	items := make([]fyne.CanvasObject, 0)
-	for _, item := range feed.Items {
+func addFeedItemsToContainer(container *widget.Box, feed model.Feeder) {
+	for _, item := range feed.GetFeedItems() {
 		feedItemRow := component.NewFeedItemRow(item)
-		items = append(items, feedItemRow)
+		container.Children = append(container.Children, feedItemRow)
 	}
 
-	container.Children = items
 }
 
 func createMenuItems() *fyne.MainMenu {
@@ -118,16 +121,23 @@ func main() {
 		log.Println("got the feeds", feeds)
 
 
-		feed, err := getFeed("https://reddit.com/r/programming/.rss")
-		log.Println("got the feed")
-		if err != nil {
-			log.Fatalf("Error getting feed %v", err)
-		}
+    for _, feedURL := range feeds {
+      if feedURL == "" {
+        continue
+      }
+      feed, err := getFeed(feedURL)
+      if err != nil {
+        log.Printf("Error getting feed %v", err)
+        continue
+      }
 
-		addFeedItemsToContainer(feedContainer, *feed)
+      log.Println("Feed", feed)
 
-		feedContainer.Refresh()
-		feedContainerScroller.Refresh()
+      addFeedItemsToContainer(feedContainer, feed)
+
+      feedContainer.Refresh()
+      feedContainerScroller.Refresh()
+    }
 	})
 	rootContainer := fyne.NewContainerWithLayout(
 		layout.NewBorderLayout(refreshButton, nil, nil, nil),

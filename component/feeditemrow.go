@@ -23,6 +23,8 @@ func (f *FeedItemRow) CreateRenderer() fyne.WidgetRenderer {
 		feedItemRow: f,
 		layout:      lay,
 		objects: []fyne.CanvasObject{
+      widget.NewLabel(f.Source),
+      widget.NewLabel(" - "),
 			widget.NewLabel(f.Title),
 		},
 	}
@@ -30,7 +32,7 @@ func (f *FeedItemRow) CreateRenderer() fyne.WidgetRenderer {
 
 type FeedItemRow struct {
 	widget.BaseWidget
-	model.Item
+	model.FeedItem
 	tapped        bool
 	hovered       bool
 	background    color.Color
@@ -38,7 +40,7 @@ type FeedItemRow struct {
 }
 
 func (f *FeedItemRow) Tapped(_ *fyne.PointEvent) {
-	log.Println("I've been tapped", f.Title)
+  log.Printf("I've been tapped title: %s link: %s \n", f.Title, f.Link)
 	parsedUrl, err := url.Parse(f.Link)
 	if err != nil {
 		log.Println(err)
@@ -90,9 +92,9 @@ func (f *FeedItemRow) MouseDown(m *desktop.MouseEvent) {
 	}
 }
 
-func NewFeedItemRow(item model.Item) *FeedItemRow {
+func NewFeedItemRow(item model.FeedItem) *FeedItemRow {
 	return &FeedItemRow{
-		Item:       item,
+		FeedItem:       item,
 		background: customtheme.ItemRowBackground,
 	}
 }

@@ -1,6 +1,9 @@
 package model
 
-import "encoding/xml"
+import (
+	"encoding/xml"
+	"fmt"
+)
 
 type RSSv1 struct {
 	xml.Name `xml:"rss"`
@@ -20,4 +23,21 @@ type Item struct {
 	Link        string `xml:"link"`
 	Comments    string `xml:"comments"`
 	Guid        string `xml:"guid"`
+}
+
+func (r RSSv1) GetFeedItems() []FeedItem {
+  feedItems := make([]FeedItem, 0)
+  for _, item := range r.Channel.Items {
+    fmt.Printf("rss FeedItem %+v \n", item)
+    feedItem := FeedItem {
+      Title: item.Title,
+      Description: item.Description,
+      PubDate: item.PubDate,
+      Link: item.Link,
+      Source: r.Channel.Title,
+    }
+    feedItems = append(feedItems, feedItem)
+  }
+
+  return feedItems
 }

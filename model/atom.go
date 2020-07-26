@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/xml"
+	"fmt"
 	"time"
 )
 
@@ -19,7 +20,7 @@ type Entry struct {
 	Title       string `xml:"title"`
 	Description string `xml:"description"`
 	PubDate     string `xml:"pubDate"`
-	Link        string `xml:"link"`
+	Link        Link `xml:"link"`
 	Comments    string `xml:"comments"`
 	Guid        string `xml:"guid"`
 }
@@ -49,4 +50,21 @@ type TimeStr string
 
 func Time(t time.Time) TimeStr {
 	return TimeStr(t.Format("2006-01-02T15:04:05-07:00"))
+}
+
+func (a Atom) GetFeedItems() []FeedItem {
+  feedItems := make([]FeedItem, 0)
+  for _, item := range a.Entry {
+    fmt.Printf("attom FeedItem %+v \n", item)
+    feedItem := FeedItem {
+      Title: item.Title,
+      Description: item.Description,
+      PubDate: item.PubDate,
+      Link: item.Link.Href,
+      Source: a.Title,
+    }
+    feedItems = append(feedItems, feedItem)
+  }
+
+  return feedItems
 }

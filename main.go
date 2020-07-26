@@ -19,6 +19,28 @@ import (
 	"fyne.io/fyne/widget"
 )
 
+func getFeeds(url string) ([]string, error) {
+
+  req, err := http.NewRequest("GET", url, nil)
+  if err != nil {
+    return nil, err
+  }
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+  return strings.Split(string(body), "\n"), nil
+}
+
+
+
 func getFeed(url string) (*model.Channel, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	req.Header["user-agent"] = []string{"not a bot"}
@@ -86,17 +108,16 @@ func main() {
 	app.Settings().SetTheme(t)
 
 	w := app.NewWindow("Feeder Reader")
-	setURLMenuItem := fyne.NewMenuItem("Set Menu Item", func() {
-		log.Println("Set URL Menu Item")
-	})
-
-	mainMenu := fyne.NewMainMenu(
-		fyne.NewMenu("Edit", setURLMenuItem),
-	)
-	w.SetMainMenu(mainMenu)
-	w.SetMaster()
 
 	refreshButton := widget.NewButton("Refresh", func() {
+    url := app.Preferences().String("URL")
+    feeds, err := getFeeds(url)
+    if err != nil {
+			log.Fatalf("Error getting list of feeds %v", err)
+    }
+		log.Println("got the feeds", feeds)
+
+
 		feed, err := getFeed("https://reddit.com/r/programming/.rss")
 		log.Println("got the feed")
 		if err != nil {
@@ -116,6 +137,6 @@ func main() {
 
 	w.SetContent(rootContainer)
 
-	w.ShowAndRun()
 	app.Preferences().SetString("URL", "https://raw.githubusercontent.com/griggsca91/rss_feeder_reader_list/master/sources.txt")
+	w.ShowAndRun()
 }

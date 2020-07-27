@@ -1,13 +1,15 @@
 package model
 
+import "time"
+
 type Feeder interface {
-  GetFeedItems() []FeedItem
+	GetFeedItems() []FeedItem
 }
 
 type FeedItem struct {
-  Title string
-  Description string
-  PubDate string
-  Link string
-  Source string
+	Title       string
+	Description string
+	PubDate     time.Time
+	Link        string
+	Source      string
 }

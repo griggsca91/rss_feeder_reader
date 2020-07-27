@@ -20,7 +20,8 @@ type Entry struct {
 	Title       string `xml:"title"`
 	Description string `xml:"description"`
 	PubDate     string `xml:"pubDate"`
-	Link        Link `xml:"link"`
+	Updated     string `xml:"updated"`
+	Link        Link   `xml:"link"`
 	Comments    string `xml:"comments"`
 	Guid        string `xml:"guid"`
 }
@@ -52,19 +53,32 @@ func Time(t time.Time) TimeStr {
 	return TimeStr(t.Format("2006-01-02T15:04:05-07:00"))
 }
 
-func (a Atom) GetFeedItems() []FeedItem {
-  feedItems := make([]FeedItem, 0)
-  for _, item := range a.Entry {
-    fmt.Printf("attom FeedItem %+v \n", item)
-    feedItem := FeedItem {
-      Title: item.Title,
-      Description: item.Description,
-      PubDate: item.PubDate,
-      Link: item.Link.Href,
-      Source: a.Title,
-    }
-    feedItems = append(feedItems, feedItem)
-  }
+func (e Entry) GetPubDate() (t time.Time, err error) {
+	t, err = time.Parse("2020-07-26T22:56:51+00:00", e.PubDate)
+	if err != nil {
+		t, err = time.Parse("2020-07-26T22:56:51+00:00", e.Updated)
+	}
 
-  return feedItems
+	return
+}
+
+func (a Atom) GetFeedItems() []FeedItem {
+	feedItems := make([]FeedItem, 0)
+	for _, item := range a.Entry {
+		fmt.Printf("attom FeedItem %+v \n", item)
+		pubDate, err := item.GetPubDate()
+		if err != nil {
+			pubDate = time.Time{}
+		}
+		feedItem := FeedItem{
+			Title:       item.Title,
+			Description: item.Description,
+			PubDate:     pubDate,
+			Link:        item.Link.Href,
+			Source:      a.Title,
+		}
+		feedItems = append(feedItems, feedItem)
+	}
+
+	return feedItems
 }

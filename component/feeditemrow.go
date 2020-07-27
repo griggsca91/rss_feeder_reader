@@ -23,8 +23,8 @@ func (f *FeedItemRow) CreateRenderer() fyne.WidgetRenderer {
 		feedItemRow: f,
 		layout:      lay,
 		objects: []fyne.CanvasObject{
-      widget.NewLabel(f.Source),
-      widget.NewLabel(" - "),
+			widget.NewLabel(f.Source),
+			widget.NewLabel(f.PubDate.Local().String()),
 			widget.NewLabel(f.Title),
 		},
 	}
@@ -40,7 +40,7 @@ type FeedItemRow struct {
 }
 
 func (f *FeedItemRow) Tapped(_ *fyne.PointEvent) {
-  log.Printf("I've been tapped title: %s link: %s \n", f.Title, f.Link)
+	log.Printf("I've been tapped title: %s link: %s \n", f.Title, f.Link)
 	parsedUrl, err := url.Parse(f.Link)
 	if err != nil {
 		log.Println(err)
@@ -94,7 +94,7 @@ func (f *FeedItemRow) MouseDown(m *desktop.MouseEvent) {
 
 func NewFeedItemRow(item model.FeedItem) *FeedItemRow {
 	return &FeedItemRow{
-		FeedItem:       item,
+		FeedItem:   item,
 		background: customtheme.ItemRowBackground,
 	}
 }

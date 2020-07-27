@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/xml"
 	"fmt"
+	"time"
 )
 
 type RSSv1 struct {
@@ -25,19 +26,27 @@ type Item struct {
 	Guid        string `xml:"guid"`
 }
 
-func (r RSSv1) GetFeedItems() []FeedItem {
-  feedItems := make([]FeedItem, 0)
-  for _, item := range r.Channel.Items {
-    fmt.Printf("rss FeedItem %+v \n", item)
-    feedItem := FeedItem {
-      Title: item.Title,
-      Description: item.Description,
-      PubDate: item.PubDate,
-      Link: item.Link,
-      Source: r.Channel.Title,
-    }
-    feedItems = append(feedItems, feedItem)
-  }
+func (e Item) GetPubDate() (time.Time, error) {
+	return time.Parse("2006-01-02T15:04:05-07:00", e.PubDate)
+}
 
-  return feedItems
+func (r RSSv1) GetFeedItems() []FeedItem {
+	feedItems := make([]FeedItem, 0)
+	for _, item := range r.Channel.Items {
+		fmt.Printf("rss FeedItem %+v \n", item)
+		date, err := item.GetPubDate()
+		if err != nil {
+			date = time.Time{}
+		}
+		feedItem := FeedItem{
+			Title:       item.Title,
+			Description: item.Description,
+			PubDate:     date,
+			Link:        item.Link,
+			Source:      r.Channel.Title,
+		}
+		feedItems = append(feedItems, feedItem)
+	}
+
+	return feedItems
 }

@@ -27,7 +27,7 @@ type Item struct {
 }
 
 func (e Item) GetPubDate() (time.Time, error) {
-	return time.Parse("2006-01-02T15:04:05-07:00", e.PubDate)
+	return time.Parse("Sun, 02 Jan 2006 15:04:05 -0700", e.PubDate)
 }
 
 func (r RSSv1) GetFeedItems() []FeedItem {

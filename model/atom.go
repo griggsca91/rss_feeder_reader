@@ -54,9 +54,9 @@ func Time(t time.Time) TimeStr {
 }
 
 func (e Entry) GetPubDate() (t time.Time, err error) {
-	t, err = time.Parse("2020-07-26T22:56:51+00:00", e.PubDate)
+	t, err = time.Parse("2006-01-02T15:04:05-07:00", e.PubDate)
 	if err != nil {
-		t, err = time.Parse("2020-07-26T22:56:51+00:00", e.Updated)
+		t, err = time.Parse("2006-01-02T15:04:05-07:00", e.Updated)
 	}
 
 	return

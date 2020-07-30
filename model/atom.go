@@ -2,7 +2,6 @@ package model
 
 import (
 	"encoding/xml"
-	"fmt"
 	"time"
 )
 
@@ -53,10 +52,10 @@ func Time(t time.Time) TimeStr {
 	return TimeStr(t.Format("2006-01-02T15:04:05-07:00"))
 }
 
-func (e Entry) GetPubDate() (t time.Time, err error) {
-	t, err = time.Parse("2006-01-02T15:04:05-07:00", e.PubDate)
+func (e Entry) GetPubDate() (t time.Time) {
+	t, err := time.Parse("2006-01-02T15:04:05-07:00", e.PubDate)
 	if err != nil {
-		t, err = time.Parse("2006-01-02T15:04:05-07:00", e.Updated)
+		t, _ = time.Parse("2006-01-02T15:04:05-07:00", e.Updated)
 	}
 
 	return
@@ -65,11 +64,8 @@ func (e Entry) GetPubDate() (t time.Time, err error) {
 func (a Atom) GetFeedItems() []FeedItem {
 	feedItems := make([]FeedItem, 0)
 	for _, item := range a.Entry {
-		fmt.Printf("attom FeedItem %+v \n", item)
-		pubDate, err := item.GetPubDate()
-		if err != nil {
-			pubDate = time.Time{}
-		}
+
+		pubDate := item.GetPubDate()
 		feedItem := FeedItem{
 			Title:       item.Title,
 			Description: item.Description,

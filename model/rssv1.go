@@ -27,17 +27,15 @@ type Item struct {
 }
 
 func (e Item) GetPubDate() (time.Time, error) {
-	return time.Parse("Sun, 02 Jan 2006 15:04:05 -0700", e.PubDate)
+	return time.Parse("Mon, 02 Jan 2006 15:04:05 -0700", e.PubDate)
 }
 
 func (r RSSv1) GetFeedItems() []FeedItem {
 	feedItems := make([]FeedItem, 0)
 	for _, item := range r.Channel.Items {
 		fmt.Printf("rss FeedItem %+v \n", item)
-		date, err := item.GetPubDate()
-		if err != nil {
-			date = time.Time{}
-		}
+
+		date, _ := item.GetPubDate()
 		feedItem := FeedItem{
 			Title:       item.Title,
 			Description: item.Description,

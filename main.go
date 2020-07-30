@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"sort"
 	"strings"
 
 	"rss_feeder_reader/component"
@@ -21,10 +22,10 @@ import (
 
 func getFeeds(url string) ([]string, error) {
 
-  req, err := http.NewRequest("GET", url, nil)
-  if err != nil {
-    return nil, err
-  }
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -36,10 +37,8 @@ func getFeeds(url string) ([]string, error) {
 		return nil, err
 	}
 
-  return strings.Split(string(body), "\n"), nil
+	return strings.Split(string(body), "\n"), nil
 }
-
-
 
 func getFeed(url string) (model.Feeder, error) {
 	req, err := http.NewRequest("GET", url, nil)
@@ -58,37 +57,53 @@ func getFeed(url string) (model.Feeder, error) {
 	}
 	defer resp.Body.Close()
 
-  contentType := resp.Header.Get("content-type")
-  fmt.Println("content-type", contentType)
-  if strings.Contains(contentType, "application/atom+xml") {
-    fmt.Println("is Atom")
-    var atomFeed model.Atom
-    if err = xml.Unmarshal(body, &atomFeed); err != nil {
-      return nil, err
-    }
-    return &atomFeed, nil
+	contentType := resp.Header.Get("content-type")
+	fmt.Println("content-type", contentType)
+	if strings.Contains(contentType, "application/atom+xml") {
+		fmt.Println("is Atom")
+		var atomFeed model.Atom
+		if err = xml.Unmarshal(body, &atomFeed); err != nil {
+			return nil, err
+		}
+		return &atomFeed, nil
 
-  } else if strings.Contains(contentType, "application/rss+xml") {
-    fmt.Println("is rss")
-    var rssFeed model.RSSv1
-    if err = xml.Unmarshal(body, &rssFeed); err != nil {
-      return nil, err
-    }
-    fmt.Println(rssFeed)
+	} else if strings.Contains(contentType, "application/rss+xml") {
+		fmt.Println("is rss")
+		var rssFeed model.RSSv1
+		if err = xml.Unmarshal(body, &rssFeed); err != nil {
+			return nil, err
+		}
+		fmt.Println(rssFeed)
 
-    return &rssFeed, nil
-  }
+		return &rssFeed, nil
+	}
 
-
-  return nil, fmt.Errorf("Invalid feed type: %s", contentType)
+	return nil, fmt.Errorf("Invalid feed type: %s", contentType)
 }
+
+type ItemSlice []model.FeedItem
+
+func (p ItemSlice) Len() int           { return len(p) }
+func (p ItemSlice) Less(i, j int) bool { return p[i].PubDate.Before(p[j].PubDate) }
+func (p ItemSlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+
+// Sort is a convenience method.
+func (p ItemSlice) Sort() { sort.Sort(p) }
+
+var feedItems ItemSlice
 
 func addFeedItemsToContainer(container *widget.Box, feed model.Feeder) {
 	for _, item := range feed.GetFeedItems() {
+		feedItems = append(feedItems, item)
+	}
+
+	feedItems.Sort()
+
+	container.Children = nil
+	for _, item := range feedItems {
 		feedItemRow := component.NewFeedItemRow(item)
 		container.Children = append(container.Children, feedItemRow)
 	}
-
 }
 
 func createMenuItems() *fyne.MainMenu {
@@ -113,31 +128,30 @@ func main() {
 	w := app.NewWindow("Feeder Reader")
 
 	refreshButton := widget.NewButton("Refresh", func() {
-    url := app.Preferences().String("URL")
-    feeds, err := getFeeds(url)
-    if err != nil {
+		url := app.Preferences().String("URL")
+		feeds, err := getFeeds(url)
+		if err != nil {
 			log.Fatalf("Error getting list of feeds %v", err)
-    }
+		}
 		log.Println("got the feeds", feeds)
 
+		for _, feedURL := range feeds {
+			if feedURL == "" {
+				continue
+			}
+			feed, err := getFeed(feedURL)
+			if err != nil {
+				log.Printf("Error getting feed %v", err)
+				continue
+			}
 
-    for _, feedURL := range feeds {
-      if feedURL == "" {
-        continue
-      }
-      feed, err := getFeed(feedURL)
-      if err != nil {
-        log.Printf("Error getting feed %v", err)
-        continue
-      }
+			log.Println("Feed", feed)
 
-      log.Println("Feed", feed)
+			addFeedItemsToContainer(feedContainer, feed)
 
-      addFeedItemsToContainer(feedContainer, feed)
-
-      feedContainer.Refresh()
-      feedContainerScroller.Refresh()
-    }
+		}
+		feedContainer.Refresh()
+		feedContainerScroller.Refresh()
 	})
 	rootContainer := fyne.NewContainerWithLayout(
 		layout.NewBorderLayout(refreshButton, nil, nil, nil),

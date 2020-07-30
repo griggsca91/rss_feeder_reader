@@ -39,6 +39,10 @@ type FeedItemRow struct {
 	mouseDownTime time.Time
 }
 
+func (w *FeedItemRow) Hide() {
+	w.BaseWidget.Hide()
+}
+
 func (f *FeedItemRow) Tapped(_ *fyne.PointEvent) {
 	log.Printf("I've been tapped title: %s link: %s \n", f.Title, f.Link)
 	parsedUrl, err := url.Parse(f.Link)
@@ -107,6 +111,7 @@ func (f *FeedItemRow) Refresh() {
 		f.background = customtheme.ItemRowBackground
 	}
 
+	log.Printf("Is feed nil %+v", f)
 	f.BaseWidget.Refresh()
 }
 

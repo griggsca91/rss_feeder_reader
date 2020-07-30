@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"sync"
+	"time"
 
 	"rss_feeder_reader/component"
 	"rss_feeder_reader/customtheme"
@@ -58,9 +60,7 @@ func getFeed(url string) (model.Feeder, error) {
 	defer resp.Body.Close()
 
 	contentType := resp.Header.Get("content-type")
-	fmt.Println("content-type", contentType)
 	if strings.Contains(contentType, "application/atom+xml") {
-		fmt.Println("is Atom")
 		var atomFeed model.Atom
 		if err = xml.Unmarshal(body, &atomFeed); err != nil {
 			return nil, err
@@ -68,12 +68,10 @@ func getFeed(url string) (model.Feeder, error) {
 		return &atomFeed, nil
 
 	} else if strings.Contains(contentType, "application/rss+xml") {
-		fmt.Println("is rss")
 		var rssFeed model.RSSv1
 		if err = xml.Unmarshal(body, &rssFeed); err != nil {
 			return nil, err
 		}
-		fmt.Println(rssFeed)
 
 		return &rssFeed, nil
 	}
@@ -133,8 +131,9 @@ func main() {
 		if err != nil {
 			log.Fatalf("Error getting list of feeds %v", err)
 		}
-		log.Println("got the feeds", feeds)
 
+		start := time.Now()
+		var wg sync.WaitGroup
 		for _, feedURL := range feeds {
 			if feedURL == "" {
 				continue
@@ -142,14 +141,14 @@ func main() {
 			feed, err := getFeed(feedURL)
 			if err != nil {
 				log.Printf("Error getting feed %v", err)
-				continue
+				return
 			}
 
-			log.Println("Feed", feed)
-
 			addFeedItemsToContainer(feedContainer, feed)
-
 		}
+		wg.Wait()
+
+		fmt.Println("finished getting all the feeds", time.Since(start))
 		feedContainer.Refresh()
 		feedContainerScroller.Refresh()
 	})

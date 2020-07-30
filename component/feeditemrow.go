@@ -44,7 +44,7 @@ func (w *FeedItemRow) Hide() {
 }
 
 func (f *FeedItemRow) Tapped(_ *fyne.PointEvent) {
-	log.Printf("I've been tapped title: %s link: %s \n", f.Title, f.Link)
+	//log.Printf("I've been tapped title: %s link: %s \n", f.Title, f.Link)
 	parsedUrl, err := url.Parse(f.Link)
 	if err != nil {
 		log.Println(err)
@@ -62,8 +62,8 @@ var (
 )
 
 func (f *FeedItemRow) MouseIn(m *desktop.MouseEvent) {
-	log.Println("Mouse In", m.Button, desktop.LeftMouseButton, m, f.Title)
-	log.Println("globalMouseDownTime", globalMouseDownTime, "f.mouseDownTime", f.mouseDownTime)
+	//log.Println("Mouse In", m.Button, desktop.LeftMouseButton, m, f.Title)
+	//log.Println("globalMouseDownTime", globalMouseDownTime, "f.mouseDownTime", f.mouseDownTime)
 	f.hovered = true
 	if f.tapped && !f.mouseDownTime.Equal(globalMouseDownTime) {
 		f.tapped = false
@@ -78,7 +78,6 @@ func (f *FeedItemRow) MouseOut() {
 func (f *FeedItemRow) MouseMoved(m *desktop.MouseEvent) {}
 
 func (f *FeedItemRow) MouseUp(m *desktop.MouseEvent) {
-	log.Println("Mouse Up", f.tapped, f.Title)
 	if f.tapped {
 		f.tapped = false
 		f.Refresh()
@@ -86,11 +85,9 @@ func (f *FeedItemRow) MouseUp(m *desktop.MouseEvent) {
 }
 
 func (f *FeedItemRow) MouseDown(m *desktop.MouseEvent) {
-	log.Println("Mouse Down", f.tapped, f.Title)
 	if m.Button == desktop.LeftMouseButton {
 		globalMouseDownTime = time.Now()
 		f.mouseDownTime = globalMouseDownTime
-		log.Println("Global mouse downTime", globalMouseDownTime)
 		f.tapped = true
 		f.Refresh()
 	}
@@ -111,7 +108,6 @@ func (f *FeedItemRow) Refresh() {
 		f.background = customtheme.ItemRowBackground
 	}
 
-	log.Printf("Is feed nil %+v", f)
 	f.BaseWidget.Refresh()
 }
 

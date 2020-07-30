@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"rss_feeder_reader/component"
@@ -133,7 +132,6 @@ func main() {
 		}
 
 		start := time.Now()
-		var wg sync.WaitGroup
 		for _, feedURL := range feeds {
 			if feedURL == "" {
 				continue
@@ -146,7 +144,6 @@ func main() {
 
 			addFeedItemsToContainer(feedContainer, feed)
 		}
-		wg.Wait()
 
 		fmt.Println("finished getting all the feeds", time.Since(start))
 		feedContainer.Refresh()

@@ -23,6 +23,8 @@ func (f *FeedItemRow) CreateRenderer() fyne.WidgetRenderer {
 		feedItemRow: f,
 		layout:      lay,
 		objects: []fyne.CanvasObject{
+			widget.NewLabel(f.Source),
+			widget.NewLabel(f.PubDate.Local().String()),
 			widget.NewLabel(f.Title),
 		},
 	}
@@ -30,15 +32,19 @@ func (f *FeedItemRow) CreateRenderer() fyne.WidgetRenderer {
 
 type FeedItemRow struct {
 	widget.BaseWidget
-	model.Item
+	model.FeedItem
 	tapped        bool
 	hovered       bool
 	background    color.Color
 	mouseDownTime time.Time
 }
 
+func (w *FeedItemRow) Hide() {
+	w.BaseWidget.Hide()
+}
+
 func (f *FeedItemRow) Tapped(_ *fyne.PointEvent) {
-	log.Println("I've been tapped", f.Title)
+	//log.Printf("I've been tapped title: %s link: %s \n", f.Title, f.Link)
 	parsedUrl, err := url.Parse(f.Link)
 	if err != nil {
 		log.Println(err)
@@ -56,8 +62,8 @@ var (
 )
 
 func (f *FeedItemRow) MouseIn(m *desktop.MouseEvent) {
-	log.Println("Mouse In", m.Button, desktop.LeftMouseButton, m, f.Title)
-	log.Println("globalMouseDownTime", globalMouseDownTime, "f.mouseDownTime", f.mouseDownTime)
+	//log.Println("Mouse In", m.Button, desktop.LeftMouseButton, m, f.Title)
+	//log.Println("globalMouseDownTime", globalMouseDownTime, "f.mouseDownTime", f.mouseDownTime)
 	f.hovered = true
 	if f.tapped && !f.mouseDownTime.Equal(globalMouseDownTime) {
 		f.tapped = false
@@ -72,7 +78,6 @@ func (f *FeedItemRow) MouseOut() {
 func (f *FeedItemRow) MouseMoved(m *desktop.MouseEvent) {}
 
 func (f *FeedItemRow) MouseUp(m *desktop.MouseEvent) {
-	log.Println("Mouse Up", f.tapped, f.Title)
 	if f.tapped {
 		f.tapped = false
 		f.Refresh()
@@ -80,19 +85,17 @@ func (f *FeedItemRow) MouseUp(m *desktop.MouseEvent) {
 }
 
 func (f *FeedItemRow) MouseDown(m *desktop.MouseEvent) {
-	log.Println("Mouse Down", f.tapped, f.Title)
 	if m.Button == desktop.LeftMouseButton {
 		globalMouseDownTime = time.Now()
 		f.mouseDownTime = globalMouseDownTime
-		log.Println("Global mouse downTime", globalMouseDownTime)
 		f.tapped = true
 		f.Refresh()
 	}
 }
 
-func NewFeedItemRow(item model.Item) *FeedItemRow {
+func NewFeedItemRow(item model.FeedItem) *FeedItemRow {
 	return &FeedItemRow{
-		Item:       item,
+		FeedItem:   item,
 		background: customtheme.ItemRowBackground,
 	}
 }

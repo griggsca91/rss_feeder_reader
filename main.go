@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"rss_feeder_reader/component"
 	"rss_feeder_reader/customtheme"
 	"rss_feeder_reader/model"
@@ -88,7 +89,7 @@ func (p ItemSlice) Sort() { sort.Sort(p) }
 
 var feedItems ItemSlice
 
-func addFeedItemsToContainer(container *widget.Box, feed model.Feeder) {
+func addFeedItemsToContainer(container *FeedContainer, feed model.Feeder) {
 	for _, item := range feed.GetFeedItems() {
 		feedItems = append(feedItems, item)
 	}
@@ -143,12 +144,95 @@ func (p *PreviewScreenController) SetFeedItem(feedItem model.FeedItem) {
 	p.Refresh()
 }
 
+type FeedController struct {
+	selectedRow   int
+	FeedContainer *FeedContainer
+}
+
+func NewFeedController() FeedController {
+	controller := FeedController{
+		FeedContainer: NewFeedContainer(),
+	}
+
+	return controller
+}
+
+func (f *FeedController) SetSelected(index int) {
+	if index < 0 {
+		return
+	}
+	if len(f.FeedContainer.Children)-1 < index {
+		return
+	}
+	f.selectedRow = index
+
+	for _, child := range f.FeedContainer.Children {
+		feedRow := child.(*component.FeedItemRow)
+		if feedRow.Selected {
+			feedRow.Selected = false
+			feedRow.Refresh()
+		}
+	}
+
+	child := f.FeedContainer.Children[f.selectedRow]
+	feedRow := child.(*component.FeedItemRow)
+	feedRow.Selected = true
+	feedRow.Refresh()
+}
+
+func (f FeedController) Refresh() {
+	f.FeedContainer.Refresh()
+}
+
+func (c FeedController) GetFeedItemRow(index int) *component.FeedItemRow {
+	child := c.FeedContainer.Children[index]
+	feedRow := child.(*component.FeedItemRow)
+	return feedRow
+}
+
+func (c *FeedController) OpenSelectedRow() {
+	row := c.GetFeedItemRow(c.selectedRow)
+	//log.Printf("I've been tapped title: %s link: %s \n", f.Title, f.Link)
+	parsedUrl, err := url.Parse(row.FeedItem.Link)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	fyne.CurrentApp().OpenURL(parsedUrl)
+}
+
+func (e *FeedController) KeyDown(key *fyne.KeyEvent) {
+	fmt.Println("Key.Name", key.Name)
+	switch key.Name {
+	case "Down":
+		e.SetSelected(e.selectedRow + 1)
+	case "Up":
+		e.SetSelected(e.selectedRow - 1)
+	case "Return":
+		e.OpenSelectedRow()
+	}
+
+}
+
+type FeedContainer struct {
+	widget.Box
+}
+
+func NewFeedContainer() *FeedContainer {
+	feedContainer := &FeedContainer{
+		Box: widget.Box{Horizontal: false},
+	}
+	feedContainer.ExtendBaseWidget(feedContainer)
+	return feedContainer
+
+}
+
 func main() {
 	app := app.NewWithID("rss_feeder_reader")
 	app.SetIcon(theme.FyneLogo())
 
-	feedContainer := widget.NewVBox()
-	feedContainerScroller := widget.NewScrollContainer(feedContainer)
+	feedController := NewFeedController()
+	feedContainerScroller := widget.NewScrollContainer(feedController.FeedContainer)
 	t := customtheme.NewCustomTheme()
 	app.Settings().SetTheme(t)
 
@@ -173,15 +257,12 @@ func main() {
 				return
 			}
 
-			addFeedItemsToContainer(feedContainer, feed)
+			addFeedItemsToContainer(feedController.FeedContainer, feed)
 		}
 
 		fmt.Println("finished getting all the feeds", time.Since(start))
-		child := feedContainer.Children[0]
-		feedRow := child.(*component.FeedItemRow)
-		feedRow.Selected = true
-		feedRow.Refresh()
-		feedContainer.Refresh()
+		feedController.SetSelected(0)
+		feedController.Refresh()
 		feedContainerScroller.Refresh()
 		previewScreenController.SetFeedItem(feedItems[0])
 	})
@@ -198,6 +279,9 @@ func main() {
 		previewScreenController.Container,
 	)
 	w.SetContent(rootContainer)
+	w.Canvas().SetOnTypedKey(func(ev *fyne.KeyEvent) {
+		feedController.KeyDown(ev)
+	})
 
 	w.Resize(fyne.NewSize(1024, 786))
 	app.Preferences().SetString("URL", "https://raw.githubusercontent.com/griggsca91/rss_feeder_reader_list/master/sources.txt")

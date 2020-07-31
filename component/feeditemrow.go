@@ -24,16 +24,16 @@ func (f *FeedItemRow) CreateRenderer() fyne.WidgetRenderer {
 		feedItemRow: f,
 		layout:      lay,
 		objects: []fyne.CanvasObject{
-			widget.NewLabel(f.Source),
-			widget.NewLabel(f.PubDate.Local().String()),
-			widget.NewLabel(f.Title),
+			widget.NewLabel(f.FeedItem.Source),
+			widget.NewLabel(f.FeedItem.PubDate.Local().String()),
+			widget.NewLabel(f.FeedItem.Title),
 		},
 	}
 }
 
 type FeedItemRow struct {
 	*widget.BaseWidget
-	model.FeedItem
+	FeedItem      model.FeedItem
 	tapped        bool
 	hovered       bool
 	background    color.Color
@@ -47,7 +47,7 @@ func (w FeedItemRow) Hide() {
 
 func (f FeedItemRow) Tapped(_ *fyne.PointEvent) {
 	//log.Printf("I've been tapped title: %s link: %s \n", f.Title, f.Link)
-	parsedUrl, err := url.Parse(f.Link)
+	parsedUrl, err := url.Parse(f.FeedItem.Link)
 	if err != nil {
 		log.Println(err)
 		return
@@ -105,8 +105,10 @@ func NewFeedItemRow(item model.FeedItem) *FeedItemRow {
 
 // Refresh updates this box to match the current theme
 func (f FeedItemRow) Refresh() {
+
 	if f.Selected {
 		f.background = color.RGBA{250, 0, 0, 1}
+		log.Println("FeedItemRow selected", f.FeedItem.Title, f.background)
 	} else {
 		f.background = customtheme.ItemRowBackground
 	}
@@ -131,9 +133,10 @@ func (b *feedItemRowRenderer) Layout(size fyne.Size) {
 
 func (b *feedItemRowRenderer) BackgroundColor() color.Color {
 	if b.feedItemRow.Selected {
-		fmt.Println("setting background feeditemrow", b.feedItemRow.FeedItem.Title, b.feedItemRow.background)
+		return color.RGBA{250, 0, 0, 1}
+	} else {
+		return customtheme.ItemRowBackground
 	}
-	return b.feedItemRow.background
 }
 
 func (b *feedItemRowRenderer) Objects() []fyne.CanvasObject {

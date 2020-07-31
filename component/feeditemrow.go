@@ -1,6 +1,7 @@
 package component
 
 import (
+	"fmt"
 	"image/color"
 	"log"
 	"net/url"
@@ -31,19 +32,20 @@ func (f *FeedItemRow) CreateRenderer() fyne.WidgetRenderer {
 }
 
 type FeedItemRow struct {
-	widget.BaseWidget
+	*widget.BaseWidget
 	model.FeedItem
 	tapped        bool
 	hovered       bool
 	background    color.Color
 	mouseDownTime time.Time
+	Selected      bool
 }
 
-func (w *FeedItemRow) Hide() {
+func (w FeedItemRow) Hide() {
 	w.BaseWidget.Hide()
 }
 
-func (f *FeedItemRow) Tapped(_ *fyne.PointEvent) {
+func (f FeedItemRow) Tapped(_ *fyne.PointEvent) {
 	//log.Printf("I've been tapped title: %s link: %s \n", f.Title, f.Link)
 	parsedUrl, err := url.Parse(f.Link)
 	if err != nil {
@@ -95,14 +97,15 @@ func (f *FeedItemRow) MouseDown(m *desktop.MouseEvent) {
 
 func NewFeedItemRow(item model.FeedItem) *FeedItemRow {
 	return &FeedItemRow{
+		BaseWidget: &widget.BaseWidget{},
 		FeedItem:   item,
 		background: customtheme.ItemRowBackground,
 	}
 }
 
 // Refresh updates this box to match the current theme
-func (f *FeedItemRow) Refresh() {
-	if f.tapped && f.hovered {
+func (f FeedItemRow) Refresh() {
+	if f.Selected {
 		f.background = color.RGBA{250, 0, 0, 1}
 	} else {
 		f.background = customtheme.ItemRowBackground
@@ -127,6 +130,9 @@ func (b *feedItemRowRenderer) Layout(size fyne.Size) {
 }
 
 func (b *feedItemRowRenderer) BackgroundColor() color.Color {
+	if b.feedItemRow.Selected {
+		fmt.Println("setting background feeditemrow", b.feedItemRow.FeedItem.Title, b.feedItemRow.background)
+	}
 	return b.feedItemRow.background
 }
 
@@ -141,5 +147,8 @@ func (b *feedItemRowRenderer) Refresh() {
 		child.Refresh()
 	}
 
+	if b.feedItemRow.Selected {
+		fmt.Println("Refreshing feeditemrow", b.feedItemRow.FeedItem.Title)
+	}
 	canvas.Refresh(b.feedItemRow)
 }

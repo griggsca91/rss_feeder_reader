@@ -122,8 +122,11 @@ type PreviewScreenController struct {
 func NewPreviewScreenController() PreviewScreenController {
 
 	description := widget.NewLabel("Empty")
+	description.Wrapping = fyne.TextWrapWord
+
 	container := widget.NewVBox(widget.NewLabel("Farts"))
 	container.Append(description)
+
 	return PreviewScreenController{
 		Container:   container,
 		description: description,
@@ -261,9 +264,12 @@ func main() {
 		}
 
 		fmt.Println("finished getting all the feeds", time.Since(start))
+
 		feedController.SetSelected(0)
 		feedController.Refresh()
+
 		feedContainerScroller.Refresh()
+
 		previewScreenController.SetFeedItem(feedItems[0])
 	})
 

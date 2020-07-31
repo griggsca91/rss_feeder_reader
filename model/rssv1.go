@@ -2,7 +2,6 @@ package model
 
 import (
 	"encoding/xml"
-	"fmt"
 	"time"
 )
 
@@ -33,8 +32,6 @@ func (e Item) GetPubDate() (time.Time, error) {
 func (r RSSv1) GetFeedItems() []FeedItem {
 	feedItems := make([]FeedItem, 0)
 	for _, item := range r.Channel.Items {
-		fmt.Printf("rss FeedItem %+v \n", item)
-
 		date, _ := item.GetPubDate()
 		feedItem := FeedItem{
 			Title:       item.Title,

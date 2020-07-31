@@ -6,13 +6,12 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"sort"
-	"strings"
-	"time"
-
 	"rss_feeder_reader/component"
 	"rss_feeder_reader/customtheme"
 	"rss_feeder_reader/model"
+	"sort"
+	"strings"
+	"time"
 
 	"fyne.io/fyne"
 	"fyne.io/fyne/app"
@@ -113,6 +112,37 @@ func createMenuItems() *fyne.MainMenu {
 	)
 }
 
+type PreviewScreenController struct {
+	feedItem    *model.FeedItem
+	Container   *widget.Box
+	description *widget.Label
+}
+
+func NewPreviewScreenController() PreviewScreenController {
+
+	description := widget.NewLabel("Empty")
+	container := widget.NewVBox(widget.NewLabel("Farts"))
+	container.Append(description)
+	return PreviewScreenController{
+		Container:   container,
+		description: description,
+	}
+}
+
+func (p *PreviewScreenController) Refresh() {
+	if p.feedItem == nil {
+		return
+	}
+
+	p.description.Text = p.feedItem.Description
+	p.Container.Refresh()
+}
+
+func (p *PreviewScreenController) SetFeedItem(feedItem model.FeedItem) {
+	p.feedItem = &feedItem
+	p.Refresh()
+}
+
 func main() {
 	app := app.NewWithID("rss_feeder_reader")
 	app.SetIcon(theme.FyneLogo())
@@ -124,6 +154,7 @@ func main() {
 
 	w := app.NewWindow("Feeder Reader")
 
+	previewScreenController := NewPreviewScreenController()
 	refreshButton := widget.NewButton("Refresh", func() {
 		url := app.Preferences().String("URL")
 		feeds, err := getFeeds(url)
@@ -146,17 +177,29 @@ func main() {
 		}
 
 		fmt.Println("finished getting all the feeds", time.Since(start))
+		child := feedContainer.Children[0]
+		feedRow := child.(*component.FeedItemRow)
+		feedRow.Selected = true
+		feedRow.Refresh()
 		feedContainer.Refresh()
 		feedContainerScroller.Refresh()
+		previewScreenController.SetFeedItem(feedItems[0])
 	})
-	rootContainer := fyne.NewContainerWithLayout(
+
+	displayFeedContainer := fyne.NewContainerWithLayout(
 		layout.NewBorderLayout(refreshButton, nil, nil, nil),
 		refreshButton,
 		feedContainerScroller,
 	)
 
+	rootContainer := fyne.NewContainerWithLayout(
+		layout.NewGridLayout(2),
+		displayFeedContainer,
+		previewScreenController.Container,
+	)
 	w.SetContent(rootContainer)
 
+	w.Resize(fyne.NewSize(1024, 786))
 	app.Preferences().SetString("URL", "https://raw.githubusercontent.com/griggsca91/rss_feeder_reader_list/master/sources.txt")
 	w.ShowAndRun()
 }
